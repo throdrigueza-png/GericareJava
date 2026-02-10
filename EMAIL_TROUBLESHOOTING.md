@@ -164,6 +164,30 @@ Esto mostrará toda la comunicación SMTP en los logs, incluyendo:
 4. Espera 1-2 minutos y revisa tu bandeja de entrada
 5. Revisa la carpeta de spam si no llega
 
+### Verificar en los Logs:
+
+Después de solicitar una recuperación de contraseña, busca estos mensajes en los logs de la aplicación:
+
+**Logs de Azure App Service:**
+```bash
+# En Azure Portal > App Service > Log stream
+# O descarga los logs desde: App Service > Advanced Tools > Kudu > Debug console
+```
+
+**Busca mensajes como:**
+```
+INFO  c.e.G.Controller.PasswordResetController : Solicitud de recuperación de contraseña recibida para el correo: usuario@example.com
+INFO  c.e.G.Impl.UsuarioServiceImpl           : Usuario encontrado: Juan Pérez (ID: 123)
+INFO  c.e.G.Impl.UsuarioServiceImpl           : Token de recuperación generado y guardado exitosamente
+INFO  c.e.G.Impl.EmailServiceImpl              : Iniciando envío de correo de recuperación de contraseña
+INFO  c.e.G.Impl.EmailServiceImpl              : Correo de recuperación de contraseña enviado exitosamente
+```
+
+Si ves todos estos mensajes INFO, el correo fue enviado correctamente. Si no llega:
+- Revisa la carpeta de spam
+- Verifica que el correo electrónico esté bien escrito en la base de datos
+- Espera unos minutos, puede haber retraso en la entrega
+
 ### Usando una Herramienta de Prueba SMTP:
 Puedes probar la configuración SMTP directamente sin la aplicación:
 
