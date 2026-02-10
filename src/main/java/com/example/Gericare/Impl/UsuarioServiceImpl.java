@@ -359,7 +359,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public String validatePasswordResetToken(String token) {
         final Usuario usuario = usuarioRepository.findByResetPasswordToken(token).orElse(null);
-        if (usuario == null || usuario.getResetPasswordTokenExpiryDate().isBefore(LocalDateTime.now())) {
+        if (usuario == null || usuario.getResetPasswordTokenExpiryDate() == null || 
+            usuario.getResetPasswordTokenExpiryDate().isBefore(LocalDateTime.now())) {
             return "invalidToken";
         }
         return null;
