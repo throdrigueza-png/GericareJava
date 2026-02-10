@@ -30,7 +30,7 @@ public class PasswordResetController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("successMessage", "Revise su correo electrónico, recibirá un enlace para restablecer la contraseña.");
         }
-        return "correo/recuperacion-clave";
+        return "redirect:/forgot-password";
     }
 
     @GetMapping("/reset-password")
