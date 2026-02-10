@@ -30,7 +30,7 @@ public class EmailServiceImpl implements EmailService {
     private String baseUrl;
     // url base usada dentro de los correos
 
-    @Value("${spring.mail.from:gericareconnect@gmail.com}")
+    @Value("${spring.mail.from:connectgericare@gmail.com}")
     private String fromEmail;
     // correo remitente configurado en application.properties
 
