@@ -367,7 +367,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.save(usuario);
         
         logger.info("Token de recuperación generado y guardado exitosamente para el usuario: {}", email);
-        logger.debug("Token generado: {} (expira en 1 hora)", token);
         
         try {
             emailService.sendPasswordResetEmail(usuario.getCorreoElectronico(), token);
