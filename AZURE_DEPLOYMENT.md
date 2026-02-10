@@ -16,8 +16,15 @@ Para que el sistema de correo funcione correctamente en Azure, es necesario conf
 
 ### 3. MAIL_PASSWORD
 - **Nombre:** `MAIL_PASSWORD`
-- **Valor:** `pqvg qjoq yeio wlau` (Contraseña de aplicación de Gmail)
+- **Valor:** `[tu-contraseña-de-aplicación-de-gmail]`
 - **Descripción:** Contraseña de aplicación de Gmail. IMPORTANTE: Esta debe ser una "Contraseña de aplicación" generada en la configuración de seguridad de Gmail, NO la contraseña regular de la cuenta.
+- **Cómo generar una contraseña de aplicación:**
+  1. Ve a tu cuenta de Google: https://myaccount.google.com/
+  2. Navega a "Seguridad"
+  3. En "Iniciar sesión en Google", selecciona "Verificación en dos pasos" (debe estar activada)
+  4. En la parte inferior, selecciona "Contraseñas de aplicaciones"
+  5. Selecciona "Correo" y el dispositivo que usas
+  6. Google generará una contraseña de 16 caracteres - usa esta contraseña como valor de MAIL_PASSWORD
 
 ## Cómo Configurar las Variables de Entorno en Azure
 
