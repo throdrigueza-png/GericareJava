@@ -23,6 +23,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +43,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioServiceImpl.class);
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -347,13 +351,31 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public void createPasswordResetTokenForUser(String email) {
+        logger.info("Iniciando proceso de recuperación de contraseña para el correo: {}", email);
+        
         Usuario usuario = usuarioRepository.findByCorreoElectronico(email)
-                .orElseThrow(() -> new RuntimeException("No se encontró usuario con correo: " + email));
+                .orElseThrow(() -> {
+                    logger.warn("No se encontró usuario con el correo: {}", email);
+                    return new RuntimeException("No se encontró usuario con correo: " + email);
+                });
+        
+        logger.info("Usuario encontrado: {} {} (ID: {})", usuario.getNombre(), usuario.getApellido(), usuario.getIdUsuario());
+        
         String token = UUID.randomUUID().toString();
         usuario.setResetPasswordToken(token);
         usuario.setResetPasswordTokenExpiryDate(LocalDateTime.now().plusHours(1));
         usuarioRepository.save(usuario);
-        emailService.sendPasswordResetEmail(usuario.getCorreoElectronico(), token);
+        
+        logger.info("Token de recuperación generado y guardado exitosamente para el usuario: {}", email);
+        logger.debug("Token generado: {} (expira en 1 hora)", token);
+        
+        try {
+            emailService.sendPasswordResetEmail(usuario.getCorreoElectronico(), token);
+            logger.info("Proceso de envío de correo iniciado para: {}", email);
+        } catch (Exception e) {
+            logger.error("Error al iniciar el envío del correo de recuperación para: {}. Error: {}", email, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
