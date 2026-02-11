@@ -3,6 +3,8 @@ package com.example.Gericare.Impl;
 import com.example.Gericare.Service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -17,6 +19,8 @@ import java.util.List;
 
 @Service
 public class EmailServiceImpl implements EmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
 
     @Autowired
     private JavaMailSender mailSender;
@@ -39,17 +43,57 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendPasswordResetEmail(String to, String token) {
         try {
+            logger.info("Iniciando envío de correo de recuperación de contraseña para: {}", to);
+            logger.debug("Configuración - Base URL: {}, From Email: {}", baseUrl, fromEmail);
+            
             String resetUrl = baseUrl + "/reset-password?token=" + token;
             Context context = new Context();
             context.setVariable("resetUrl", resetUrl);
             context.setVariable("email", to);
             context.setVariable("appBaseUrl", baseUrl);
+            context.setVariable("usesDocument", false);
 
             String htmlContent = templateEngine.process("emails/password-reset-email", context);
             enviarCorreoBase(to, "Solicitud de Cambio de Contraseña - Gericare Connect", htmlContent);
+            
+            logger.info("Correo de recuperación de contraseña enviado exitosamente a: {}", to);
 
         } catch (MessagingException e) {
+            logger.error("Error al enviar correo de recuperación de contraseña a: {}. Error: {}", to, e.getMessage(), e);
             throw new IllegalStateException("Fallo al enviar el correo de reseteo.", e);
+        } catch (Exception e) {
+            logger.error("Error inesperado al enviar correo de recuperación de contraseña a: {}. Error: {}", to, e.getMessage(), e);
+            throw new IllegalStateException("Error inesperado al enviar el correo de reseteo.", e);
+        }
+    }
+    
+    // Reseteo de Contraseña cuando el usuario aún usa su documento
+    @Async
+    @Override
+    public void sendPasswordResetEmailWithDocument(String to, String token, String documentNumber) {
+        try {
+            logger.info("Iniciando envío de correo de recuperación para usuario que usa documento como contraseña: {}", to);
+            logger.debug("Configuración - Base URL: {}, From Email: {}", baseUrl, fromEmail);
+            
+            String resetUrl = baseUrl + "/reset-password?token=" + token;
+            Context context = new Context();
+            context.setVariable("resetUrl", resetUrl);
+            context.setVariable("email", to);
+            context.setVariable("appBaseUrl", baseUrl);
+            context.setVariable("usesDocument", true);
+            context.setVariable("documentNumber", documentNumber);
+
+            String htmlContent = templateEngine.process("emails/password-reset-email", context);
+            enviarCorreoBase(to, "Recordatorio de Contraseña - Gericare Connect", htmlContent);
+            
+            logger.info("Correo de recordatorio de documento enviado exitosamente a: {}", to);
+
+        } catch (MessagingException e) {
+            logger.error("Error al enviar correo de recordatorio de documento a: {}. Error: {}", to, e.getMessage(), e);
+            throw new IllegalStateException("Fallo al enviar el correo de recordatorio.", e);
+        } catch (Exception e) {
+            logger.error("Error inesperado al enviar correo de recordatorio a: {}. Error: {}", to, e.getMessage(), e);
+            throw new IllegalStateException("Error inesperado al enviar el correo de recordatorio.", e);
         }
     }
 
@@ -58,6 +102,8 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendWelcomeEmail(String to, String nombre, String documentoIdentificacion) {
         try {
+            logger.info("Enviando correo de bienvenida a: {}", to);
+            
             Context context = new Context();
             context.setVariable("nombreUsuario", nombre);
             context.setVariable("documentoIdentificacion", documentoIdentificacion);
@@ -67,9 +113,15 @@ public class EmailServiceImpl implements EmailService {
 
             String htmlContent = templateEngine.process("emails/welcome-email", context);
             enviarCorreoBase(to, "¡Bienvenido a Gericare Connect!", htmlContent);
+            
+            logger.info("Correo de bienvenida enviado exitosamente a: {}", to);
 
         } catch (MessagingException e) {
+            logger.error("Error al enviar correo de bienvenida a: {}. Error: {}", to, e.getMessage(), e);
             throw new IllegalStateException("Fallo al enviar el correo de bienvenida.", e);
+        } catch (Exception e) {
+            logger.error("Error inesperado al enviar correo de bienvenida a: {}. Error: {}", to, e.getMessage(), e);
+            throw new IllegalStateException("Error inesperado al enviar el correo de bienvenida.", e);
         }
     }
 
@@ -78,9 +130,14 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendBulkEmail(List<String> recipients, String subject, String body) {
         // evita continuar si no hay destinatarios
-        if (recipients == null || recipients.isEmpty()) return;
+        if (recipients == null || recipients.isEmpty()) {
+            logger.warn("Intento de enviar correo masivo sin destinatarios");
+            return;
+        }
 
         try {
+            logger.info("Enviando correo masivo a {} destinatarios. Asunto: {}", recipients.size(), subject);
+            
             // convierte el texto plano a html con estilos básicos
             String formattedBody = formatTextToHtml(body);
 
@@ -103,10 +160,14 @@ public class EmailServiceImpl implements EmailService {
 
             // ejecuta el envío a través del servidor smtp
             mailSender.send(mimeMessage);
+            
+            logger.info("Correo masivo enviado exitosamente a {} destinatarios", recipients.size());
 
         } catch (MessagingException e) {
             // registra un error si falla el envío
-            System.err.println("Error al enviar correo masivo: " + e.getMessage());
+            logger.error("Error al enviar correo masivo a {} destinatarios. Error: {}", recipients.size(), e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("Error inesperado al enviar correo masivo. Error: {}", e.getMessage(), e);
         }
     }
 
@@ -115,6 +176,8 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendEmailChangeNotification(String newEmail, String userName) {
         try {
+            logger.info("Enviando notificación de cambio de correo a: {}", newEmail);
+            
             Context context = new Context();
             context.setVariable("userName", userName);
             context.setVariable("newEmail", newEmail);
@@ -122,15 +185,21 @@ public class EmailServiceImpl implements EmailService {
 
             String htmlContent = templateEngine.process("emails/email-change-notification", context);
             enviarCorreoBase(newEmail, "Tu correo en Gericare ha sido actualizado", htmlContent);
+            
+            logger.info("Notificación de cambio de correo enviada exitosamente a: {}", newEmail);
 
         } catch (MessagingException e) {
-            System.err.println("Fallo al enviar notificación de cambio de email: " + e.getMessage());
+            logger.error("Error al enviar notificación de cambio de correo a: {}. Error: {}", newEmail, e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("Error inesperado al enviar notificación de cambio de correo. Error: {}", e.getMessage(), e);
         }
     }
 
     // Métodos Auxiliares Privados (pa evitar repetir cod)
 
     private void enviarCorreoBase(String to, String subject, String htmlContent) throws MessagingException {
+        logger.debug("Preparando envío de correo - Para: {}, Asunto: {}, Remitente: {}", to, subject, fromEmail);
+        
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
@@ -141,7 +210,9 @@ public class EmailServiceImpl implements EmailService {
 
         agregarLogosInline(helper);
 
+        logger.debug("Enviando correo a través del servidor SMTP...");
         mailSender.send(mimeMessage);
+        logger.debug("Correo enviado exitosamente a través del servidor SMTP");
     }
 
     private void agregarLogosInline(MimeMessageHelper helper) {

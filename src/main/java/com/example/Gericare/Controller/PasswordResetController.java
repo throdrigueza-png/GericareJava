@@ -1,6 +1,8 @@
 package com.example.Gericare.Controller;
 
 import com.example.Gericare.Service.UsuarioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +13,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class PasswordResetController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PasswordResetController.class);
 
     @Autowired
     private UsuarioService usuarioService;
@@ -24,10 +28,19 @@ public class PasswordResetController {
     // Procesar correo y enviar link recuperación contraseña
     @PostMapping("/forgot-password")
     public String processForgotPassword(@RequestParam("email") String email, RedirectAttributes redirectAttributes) {
+        logger.info("Solicitud de recuperación de contraseña recibida para el correo: {}", email);
+        
         try {
             usuarioService.createPasswordResetTokenForUser(email);
+            logger.info("Token de recuperación creado exitosamente para: {}", email);
+            redirectAttributes.addFlashAttribute("successMessage", "Revise su correo electrónico, recibirá un enlace para restablecer la contraseña.");
+        } catch (RuntimeException e) {
+            logger.error("Error al procesar recuperación de contraseña para: {}. Error: {}", email, e.getMessage(), e);
+            // Por seguridad, mostramos el mismo mensaje al usuario incluso si el correo no existe
+            // pero registramos el error real en los logs
             redirectAttributes.addFlashAttribute("successMessage", "Revise su correo electrónico, recibirá un enlace para restablecer la contraseña.");
         } catch (Exception e) {
+            logger.error("Error inesperado al procesar recuperación de contraseña para: {}. Error: {}", email, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("successMessage", "Revise su correo electrónico, recibirá un enlace para restablecer la contraseña.");
         }
         return "redirect:/forgot-password";
