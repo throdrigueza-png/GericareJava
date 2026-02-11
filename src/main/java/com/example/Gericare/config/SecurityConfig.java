@@ -1,5 +1,7 @@
 package com.example.Gericare.config;
 
+import com.example.Gericare.Security.CustomAuthenticationSuccessHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +17,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    @Autowired
+    private CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(); // BCryptPasswordEncoder para que las contraseñas en la bd se guarden hasheadas
@@ -28,6 +33,9 @@ public class SecurityConfig {
                         // Permisos públicos (no requieren login)
                         .requestMatchers("/", "/login", "/registro", "/reset-password", "/css/**", "/js/**", "/images/**", "/forgot-password")
                         .permitAll()
+                        
+                        // Cambio de contraseña obligatorio (requiere estar autenticado)
+                        .requestMatchers("/cambiar-contrasena-obligatorio").authenticated()
 
                         // Reglas cuidador
                         .requestMatchers(HttpMethod.POST, "/actividades/completar/**").hasRole("Cuidador")
@@ -75,7 +83,7 @@ public class SecurityConfig {
                 // Config del login
                 .formLogin(form -> form
                         .loginPage("/login") // Se le dice a Spring cuál es la pag de login
-                        .defaultSuccessUrl("/dashboard", true) // Redirigir si el login es exitoso
+                        .successHandler(customAuthenticationSuccessHandler) // Usar custom handler para verificar cambio de contraseña
                         .permitAll())
                 // Config del logout
                 .logout(logout -> logout
