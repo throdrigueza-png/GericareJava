@@ -30,22 +30,20 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         logger.info("Usuario autenticado exitosamente: {}", username);
         
         // Buscar el usuario en la base de datos para verificar si necesita cambiar contraseña
-        usuarioRepository.findByCorreoElectronico(username).ifPresent(usuario -> {
-            if (usuario.isNecesitaCambioContrasena()) {
-                logger.info("Usuario {} necesita cambiar su contraseña, redirigiendo a /cambiar-contrasena-obligatorio", username);
-                try {
-                    response.sendRedirect("/cambiar-contrasena-obligatorio");
-                } catch (IOException e) {
-                    logger.error("Error al redirigir a cambio de contraseña obligatorio: {}", e.getMessage());
-                }
-            } else {
-                logger.info("Usuario {} no necesita cambiar contraseña, redirigiendo a dashboard", username);
-                try {
-                    response.sendRedirect("/dashboard");
-                } catch (IOException e) {
-                    logger.error("Error al redirigir al dashboard: {}", e.getMessage());
-                }
-            }
-        });
+        Usuario usuario = usuarioRepository.findByCorreoElectronico(username).orElse(null);
+        
+        if (usuario == null) {
+            logger.error("Usuario autenticado pero no encontrado en BD: {}", username);
+            response.sendRedirect("/login?error");
+            return;
+        }
+        
+        if (usuario.isNecesitaCambioContrasena()) {
+            logger.info("Usuario {} necesita cambiar su contraseña, redirigiendo a /cambiar-contrasena-obligatorio", username);
+            response.sendRedirect("/cambiar-contrasena-obligatorio");
+        } else {
+            logger.info("Usuario {} no necesita cambiar contraseña, redirigiendo a dashboard", username);
+            response.sendRedirect("/dashboard");
+        }
     }
 }
