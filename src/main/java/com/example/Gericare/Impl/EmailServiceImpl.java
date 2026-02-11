@@ -51,6 +51,7 @@ public class EmailServiceImpl implements EmailService {
             context.setVariable("resetUrl", resetUrl);
             context.setVariable("email", to);
             context.setVariable("appBaseUrl", baseUrl);
+            context.setVariable("usesDocument", false);
 
             String htmlContent = templateEngine.process("emails/password-reset-email", context);
             enviarCorreoBase(to, "Solicitud de Cambio de Contraseña - Gericare Connect", htmlContent);
@@ -63,6 +64,36 @@ public class EmailServiceImpl implements EmailService {
         } catch (Exception e) {
             logger.error("Error inesperado al enviar correo de recuperación de contraseña a: {}. Error: {}", to, e.getMessage(), e);
             throw new IllegalStateException("Error inesperado al enviar el correo de reseteo.", e);
+        }
+    }
+    
+    // Reseteo de Contraseña cuando el usuario aún usa su documento
+    @Async
+    @Override
+    public void sendPasswordResetEmailWithDocument(String to, String token, String documentNumber) {
+        try {
+            logger.info("Iniciando envío de correo de recuperación para usuario que usa documento como contraseña: {}", to);
+            logger.debug("Configuración - Base URL: {}, From Email: {}", baseUrl, fromEmail);
+            
+            String resetUrl = baseUrl + "/reset-password?token=" + token;
+            Context context = new Context();
+            context.setVariable("resetUrl", resetUrl);
+            context.setVariable("email", to);
+            context.setVariable("appBaseUrl", baseUrl);
+            context.setVariable("usesDocument", true);
+            context.setVariable("documentNumber", documentNumber);
+
+            String htmlContent = templateEngine.process("emails/password-reset-email", context);
+            enviarCorreoBase(to, "Recordatorio de Contraseña - Gericare Connect", htmlContent);
+            
+            logger.info("Correo de recordatorio de documento enviado exitosamente a: {}", to);
+
+        } catch (MessagingException e) {
+            logger.error("Error al enviar correo de recordatorio de documento a: {}. Error: {}", to, e.getMessage(), e);
+            throw new IllegalStateException("Fallo al enviar el correo de recordatorio.", e);
+        } catch (Exception e) {
+            logger.error("Error inesperado al enviar correo de recordatorio a: {}. Error: {}", to, e.getMessage(), e);
+            throw new IllegalStateException("Error inesperado al enviar el correo de recordatorio.", e);
         }
     }
 

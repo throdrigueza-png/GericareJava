@@ -6,6 +6,9 @@ public interface EmailService {
 
     // Envío de correo de recuperación de contraseña
     void sendPasswordResetEmail(String to, String token);
+    
+    // Envío de correo de recuperación de contraseña cuando aún usa documento
+    void sendPasswordResetEmailWithDocument(String to, String token, String documentNumber);
 
     // Envío de correo de bienvenida al registro
     void sendWelcomeEmail(String to, String nombre, String documentoIdentificacion);

@@ -369,7 +369,13 @@ public class UsuarioServiceImpl implements UsuarioService {
         logger.info("Token de recuperación generado y guardado exitosamente para el usuario: {}", email);
         
         try {
-            emailService.sendPasswordResetEmail(usuario.getCorreoElectronico(), token);
+            // Si el usuario aún no ha cambiado su contraseña, enviar email informativo
+            if (usuario.isNecesitaCambioContrasena()) {
+                logger.info("Usuario {} aún usa su documento como contraseña, enviando correo informativo", email);
+                emailService.sendPasswordResetEmailWithDocument(usuario.getCorreoElectronico(), token, usuario.getDocumentoIdentificacion());
+            } else {
+                emailService.sendPasswordResetEmail(usuario.getCorreoElectronico(), token);
+            }
             logger.info("Proceso de envío de correo iniciado para: {}", email);
         } catch (Exception e) {
             logger.error("Error al iniciar el envío del correo de recuperación para: {}. Error: {}", email, e.getMessage(), e);
